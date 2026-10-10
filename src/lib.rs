@@ -109,10 +109,9 @@ pub fn local_quote(unit: Unit, binding: String, valid_until: u64) -> Quote {
 pub(crate) fn digest(fields: &[&str]) -> String {
     // JSON array framing prevents concatenation ambiguity; these are public proof IDs,
     // not hashes of low-entropy phone numbers or other private identities.
-    format!(
-        "{:x}",
-        Sha256::digest(serde_json::to_vec(fields).expect("strings serialize"))
-    )
+    hex::encode(Sha256::digest(
+        serde_json::to_vec(fields).expect("strings serialize"),
+    ))
 }
 
 #[cfg(test)]

@@ -122,7 +122,7 @@ impl Altcha {
         let result = altcha::verify_solution(VerifySolutionOptions::new(
             &issued.challenge,
             solution,
-            &self.secret,
+            self.secret.as_str(),
         ))
         .map_err(|_| Error::Rejected)?;
         if !result.verified {

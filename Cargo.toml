@@ -18,6 +18,7 @@ unsafe_code = "forbid"
 missing_docs = "warn"
 
 [dependencies]
+hex = "0.4"
 altcha = "1"
 cfbk = { git = "https://git.corbet.ch/corbet-foss/cfbk", branch = "main" }
 http = "1"
