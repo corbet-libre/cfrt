@@ -658,3 +658,48 @@ fn complete_failure_reports_preserve_http_bytes_without_diagnostic_leaks() {
     assert!(Error::Uncertain.report().is_none());
     assert_eq!(Error::Cost.category(), &Error::Cost);
 }
+
+#[test]
+fn requested_pow_failure_reports_keep_all_upstream_fields() {
+    let engine = signer();
+    let now = now();
+    let issued = engine.issue(&usage(), work(), now, now + 300).unwrap();
+    let mut solution =
+        altcha::solve_challenge(altcha::SolveChallengeOptions::new(issued.challenge()))
+            .unwrap()
+            .unwrap();
+    let mut state = Store {
+        allowed: false,
+        calls: 0,
+    };
+    let consumed = engine
+        .verify(
+            &issued,
+            &solution,
+            &usage(),
+            &mut state,
+            Disclosure::Complete,
+            now,
+        )
+        .err()
+        .unwrap();
+    assert_eq!(consumed.category(), &Error::Consumption);
+    assert_eq!(consumed.report().unwrap().information()["verified"], true);
+    solution.derived_key = "z".repeat(64);
+    let invalid = engine
+        .verify(
+            &issued,
+            &solution,
+            &usage(),
+            &mut state,
+            Disclosure::Complete,
+            now,
+        )
+        .err()
+        .unwrap();
+    assert_eq!(invalid.category(), &Error::Rejected);
+    let fields = invalid.report().unwrap().information();
+    assert_eq!(fields["verified"], false);
+    assert_eq!(fields["invalid_solution"], true);
+    assert_eq!(fields.as_object().unwrap().len(), 5);
+}

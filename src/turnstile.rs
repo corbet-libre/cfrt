@@ -8,6 +8,8 @@ use zeroize::Zeroizing;
 pub trait Transport {
     /// POST the exact request once, over authenticated TLS, to its fixed origin.
     /// The library has already required atomic host dispatch/budget reservation.
+    /// Recheck a fresh trusted clock against quote.valid_until immediately before
+    /// I/O, including after transport queueing.
     /// No redirects, hidden SDK retries, logging bodies or disk caches. Bound the
     /// response while reading it (64 KiB maximum), including decompression.
     fn send(

@@ -59,7 +59,9 @@ pub trait Adapter {
     /// Explicit production or sandbox; simulation never invokes this trait.
     fn mode(&self) -> Mode;
     /// Authenticate bounded evidence and every requested job/work requirement.
-    /// Host cost reservation already occurred. No implicit retry or unquoted operation.
+    /// Host cost reservation already occurred. Recheck a fresh trusted clock
+    /// against quote.valid_until immediately before actual I/O, after queueing.
+    /// No implicit retry or unquoted operation.
     fn verify(
         &self,
         evidence: &[u8],

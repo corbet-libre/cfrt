@@ -137,7 +137,7 @@ impl Altcha {
         ))
         .expect("privately issued immutable ALTCHA parameters remain valid");
         if !result.verified {
-            return Err(Error::Rejected);
+            return Err(Error::Rejected.with_report(disclosure, information(&result)));
         }
         let proof = digest(&[
             "cfrt.altcha.proof.v1",
@@ -145,7 +145,7 @@ impl Altcha {
             &issued.challenge.parameters.nonce,
         ]);
         if !store.reserve(&proof, usage, issued.expires) {
-            return Err(Error::Consumption);
+            return Err(Error::Consumption.with_report(disclosure, information(&result)));
         }
         Ok(Verified {
             proof: Proof {
@@ -155,4 +155,16 @@ impl Altcha {
             upstream: (disclosure == Disclosure::Complete).then_some(result),
         })
     }
+}
+
+fn information(result: &VerifySolutionResult) -> serde_json::Value {
+    // Exhaustive upstream destructuring makes new fields a compile-time review.
+    let VerifySolutionResult {
+        expired,
+        invalid_signature,
+        invalid_solution,
+        time,
+        verified,
+    } = result;
+    serde_json::json!({"expired":expired,"invalid_signature":invalid_signature,"invalid_solution":invalid_solution,"time":time,"verified":verified})
 }
