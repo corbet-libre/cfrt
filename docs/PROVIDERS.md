@@ -34,7 +34,25 @@ The caller may persist only explicitly requested output; no generic raw journal
 or database connection is accepted by the library.
 
 Simulation supplies dummy outcomes and validates real domain requirements,
-capabilities and shared cfbk ordering/budget/stop behavior. It cannot sign or
-verify production evidence. Integration tests use real upstream libraries,
+capabilities and shared cfbk ordering/budget/stop behavior. Its outputs cannot be used as production evidence. Integration tests use real upstream libraries,
 inert fixtures and caller-state examples; no external-account signup, spending,
 live verification or production qualification is implied.
+
+
+## Candidate arsenal (reviewed 2026-10-10)
+
+These are integration directions, not installed providers. Account selection,
+accepted guarantees, tariffs and activation remain caller choices. Prefer the
+upstream implementation; a catalogue row alone is never an authenticated adapter.
+
+| Candidate and primary reference | Reusable work and required inputs | Cost/guarantee boundary |
+|---|---|---|
+| [mCaptcha / libmcaptcha](https://github.com/mCaptcha/libmcaptcha) | Rust PoW core; integrate its challenge and verification contracts through the effort extension port. | Self-hosting/CPU costs are distinct from third-party fees. Review current maintenance, license and replay model before adoption. |
+| [hCaptcha](https://docs.hcaptcha.com/) | Siteverify protocol; explicit sitekey/server secret and authenticated token response. | Account tariff and charged attempts require bounds. CAPTCHA does not prove biometric identity or a fixed amount of human labor. |
+| [reCAPTCHA](https://developers.google.com/recaptcha/docs/verify) | Server token verification; trusted site/account secret, exact product/version and expected context. | Product-specific response meaning matters; do not reinterpret a score-only response as a measured effort quantity. |
+| [Friendly Captcha v2](https://developer.friendlycaptcha.com/docs/v2/api) | Siteverify HTTP integration with explicit API key and selected endpoint. | Contract-based service fee and compute burden are separate. Integrate real failure/mode semantics rather than assume protocol compatibility. |
+| [BOINC validation](https://github.com/BOINC/boinc/wiki/ValidationIntro) | Established project/application result validators; authenticate the completed job and exact assigned work through `extension::Adapter`. | A task-specific validator is essential. Ordinary participation or reported runtime is not proof of useful work. External project storage stays outside this RAM-only library. |
+
+ALTCHA and Turnstile are the concrete integrations above. The open extension
+service can enforce request/expiry/cost/consumption around a trusted useful-work
+verifier, but no BOINC job is launched or credited by this implementation.
