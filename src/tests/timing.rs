@@ -1,6 +1,5 @@
 use super::*;
 use crate::extension as work;
-use crate::turnstile::Transport as _;
 use std::task::Poll;
 
 async fn reply_after_yield(clock: &Cell<u64>, completion: u64) {
@@ -112,6 +111,7 @@ fn turnstile_rechecks_time_after_reservation_reply_and_consumption() {
                 || clock.get(),
             ));
             if let Some(error) = &expected {
+                assert!(result.is_err());
                 let actual = result.err().expect("late or rolled-back clock must refuse");
                 assert_eq!(actual.category(), error);
                 assert_eq!(
@@ -226,6 +226,7 @@ fn useful_work_rechecks_both_request_and_evidence_deadlines_after_await() {
                 || clock.get(),
             ));
             if let Some(error) = &expected {
+                assert!(result.is_err());
                 let actual = result.err().expect("late or rolled-back clock must refuse");
                 assert_eq!(actual.category(), error);
                 assert_eq!(
