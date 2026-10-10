@@ -1,5 +1,5 @@
 use super::*;
-use crate::extension::{self, Adapter, Authenticated, Request, Service, Verified};
+use crate::extension::{Adapter, Authenticated, Request, Service, Verified};
 
 struct Extension {
     instance: &'static str,
