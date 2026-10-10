@@ -5,7 +5,7 @@
 | Official ALTCHA v2 Rust | Signed bounded PBKDF2 challenge, real verification, private complete result | Caller injects random signing secret >=32 bytes; local verification has no third-party fee. CPU/hosting/member work are separate resources. |
 | Cloudflare Turnstile | Siteverify form request, authenticated transport, response/context validation and rich JSON | Explicit server secret, hostname and stable account/widget instance. Operator supplies exact or maximum tariff for its contract; no implicit free tier. |
 | hCaptcha, reCAPTCHA, Friendly Captcha, ALTCHA Sentinel | Candidates only | Need independent protocol/cost/mode integration; no adapter is claimed here. |
-| Useful computation | Open domain scope; concrete adapter not implemented | Task owner must authenticate a job/result verifier and usage semantics. Ordinary PoW is not useful computation by implication. |
+| Useful computation | Working authenticated extension service; concrete vendor adapter not implemented | Task owner must authenticate a job/result verifier and usage semantics. Ordinary PoW is not useful computation by implication. |
 
 The [official ALTCHA library](https://github.com/altcha-org/altcha-lib-rs)
 provides the cryptography and protocol. Current compatible ranges and the

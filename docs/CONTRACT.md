@@ -32,3 +32,11 @@ Host ports own distributed atomicity, idempotent action IDs and policy windows.
 Library tests exercise concurrent example ports, changed bindings, privacy,
 refusals, uncertainty and cost limits with inert keys and transports. Live
 provider/sandbox and hardware flows are unexecuted. See [provider notes](PROVIDERS.md).
+
+`extension::Adapter` integrates additional maintained verifiers without changing
+the domain proof type. It authenticates caller-supplied job/work requirements,
+full context, result identity and expiry. `extension::Service` validates a bound
+quote/permit, requires atomic dispatch, checks authenticated result context and
+validity, then reserves usage. Explicit rich and sandbox output preserve the same
+boundary as built-ins. A fixture implementation tests this port; it does not
+qualify a useful-computation vendor or invent its verification protocol.

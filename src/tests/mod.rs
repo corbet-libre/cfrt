@@ -578,3 +578,5 @@ impl DispatchState for Store {
         true // Each independent fixture models a newly admitted host operation.
     }
 }
+
+mod extension;

@@ -4,6 +4,7 @@
 //! atomic consumption and transport. The library never opens storage.
 #![forbid(unsafe_code)]
 
+pub mod extension;
 pub mod pow;
 pub mod turnstile;
 

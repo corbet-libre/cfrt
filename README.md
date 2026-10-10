@@ -81,7 +81,7 @@ Provider extensions are available information, not extra validated claims.
 | Turnstile | Working with host transport | Provider test keys separate from production; source contract below. |
 | hCaptcha / reCAPTCHA | Candidates | Distinct response semantics and commercial tariffs. hCaptcha hostname is browser-derived, not an authentication boundary. |
 | Friendly Captcha / ALTCHA Sentinel | Candidates | Commercial verification and privacy requirements need separate priced adapter contracts. |
-| Useful computation / BOINC-style tasks | Domain extension point | Need task-owner-authenticated job identity, accepted result verifier, bounded validation, and atomic reward/consumption. Ordinary PoW does not produce useful work by implication. |
+| Useful computation / BOINC-style tasks | Trusted `extension::Adapter` service; concrete vendors remain candidates | Need task-owner-authenticated job identity, accepted result verifier, bounded validation, and atomic reward/consumption. Ordinary PoW does not produce useful work by implication. |
 | Hardware or specialized proof systems | Candidates | Use a maintained protocol library with explicit verification and resource guarantees; no invented crypto. |
 
 Source contracts checked 2026-10-10:
@@ -101,3 +101,10 @@ paid work, credentials or hardware verification have been executed. Hardware and
 commercial candidate rows are not implemented adapters.
 
 See [the contract](docs/CONTRACT.md) and [provider notes](docs/PROVIDERS.md).
+
+`extension::Service` makes the adapter model open to further mechanisms. The
+adapter must independently authenticate the exact caller requirements, fresh
+context, result ID and expiry. The service requires bound cost permission plus
+host dispatch reservation, then consumption, and applies minimal/complete and
+sandbox separation uniformly. The public `Authenticated` value is a trusted-code
+port, not member input or an accepting JSON endpoint.
