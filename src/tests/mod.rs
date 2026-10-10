@@ -219,8 +219,6 @@ fn invalid_work_is_rejected_before_computation() {
     ] {
         assert!(engine.issue(&usage(), work(), now, expires).is_err());
     }
-    assert!(simulate(true).accepted);
-    assert!(!simulate(false).accepted);
     assert_eq!(format!("{:?}", Error::Cost), "Cost");
     for error in [
         Error::Configuration,
@@ -567,5 +565,16 @@ fn configuration_requires_correct_credential_mode() {
         },
     ] {
         assert!(turnstile::Turnstile::new(changed, dummy(good())).is_err());
+    }
+}
+
+mod atomic;
+
+mod simulation;
+
+impl DispatchState for Store {
+    fn reserve_dispatch(&mut self, quote: &Quote) -> bool {
+        assert!(!quote.binding.is_empty());
+        true // Each independent fixture models a newly admitted host operation.
     }
 }

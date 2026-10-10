@@ -1,13 +1,34 @@
-# Effort boundary
+# Verified effort contract
 
-Effort belongs to the action that requires it, not a stored membership gate.
-The current v0.4 tree has no assigned home for this reservation. A future
-implementation may use established proof-of-work schemes only after the
-action/owner contract is decided; it must not accept money as effort or invent
-cryptographic primitives. No challenge or verification API is implemented.
+Applications select mechanism, requirements, scope, action, deadline and maximum
+uses. ALTCHA v2 verifies server-issued PBKDF2 search through the official library;
+Turnstile verifies a provider response through its documented Siteverify protocol.
+Neither mechanism proves personhood, elapsed effort, payment or useful computation.
 
-No local security primitive, confidence ranking or accepting placeholder may
-be introduced. Registry publication, paid operations and live provider calls
-are outside this configuration task. Empty production coverage must fail;
-real owner/provider contracts and adversarial tests are required before any
-implementation can claim verification.
+The authoritative ALTCHA `Issued` envelope is private, immutable and RAM-only.
+Its signed context includes scope/action/maximum; verification refuses changed
+terms and uses the original work parameters. The current envelope binds one
+action: a higher ceiling does not make work transferable between actions.
+Cryptographic processing belongs to upstream. Fixed algorithm, validated work,
+generated nonce/salt and immutable envelope make upstream configuration errors
+inaccessible to client solutions; malformed full-length solutions are refusal tests.
+
+Turnstile binds account/widget identity, mode, configured hostname, widget action,
+fresh cData and token to the preview/permit. Every real call requires a bounded,
+sourced, unexpired quote and the required caller `DispatchState` reservation.
+That port atomically reserves stable operation identity and total budget before
+transport, refuses already-dispatched/uncertain requests, and owns reconciliation
+across restarts. `Consumption` separately enforces usage after authentication.
+No leaf-owned database, pool, SQL, file cache or hidden persistence exists.
+
+Minimal results are authenticated mechanism/expiry facts. Explicit complete
+results relay all available upstream fields in private transient output; arbitrary
+provider fields are not extra verified predicates. Production refuses provider
+test secrets. Sandbox has distinct output and never reserves production usage.
+Deterministic local simulation validates the same requirements and runs cfbk
+planning/fallback using dummy outcomes, with a type that cannot become `Proof`.
+
+Host ports own distributed atomicity, idempotent action IDs and policy windows.
+Library tests exercise concurrent example ports, changed bindings, privacy,
+refusals, uncertainty and cost limits with inert keys and transports. Live
+provider/sandbox and hardware flows are unexecuted. See [provider notes](PROVIDERS.md).

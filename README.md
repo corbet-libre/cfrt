@@ -23,7 +23,9 @@ secret and mode. Pass `Request::challenge_data()` as the widget cData, with the
 requested widget action. Obtain a pure `preview` from an explicit tariff, construct
 a `cfbk::cost::Plan`, then pass its move-only permit to `verify`. Supply an HTTP
 transport implementing the documented TLS, no-redirect/no-retry, response-bound
-and atomic operation/exposure requirements. No transport is silently configured.
+requirements. The supplied state also implements `DispatchState`: the library
+requires atomic operation/exposure reservation before calling transport. No
+transport is silently configured.
 
 `Consumption::reserve` is a caller-owned atomic operation: proof + scope + action,
 maximum uses and expiry. Repeated action IDs are idempotent; different action IDs
@@ -39,17 +41,18 @@ hosting and member effort are separate resource costs. Turnstile has no implicit
 free price: the operator supplies a sourced, valid exact fee or maximum covering
 its contract/tier. `Price::Unknown` is informative and cannot authorize dispatch.
 Cost bindings cover account, mode, hostname, action context and token. Request
-changes invalidate permission. The host reserves cost/execution identity across
-processes through the transport port; cfbk handles the local cascade budget.
+changes invalidate permission. The required `DispatchState` port reserves cost/execution identity across
+processes before transport; cfbk handles the local cascade budget.
 
 Use cfbk configured or cheapest order, selecting only mechanisms the application's
 requirements accept. A PoW solution is not an interchangeable biometric proof.
 Provider ambiguity is `Error::Uncertain`: retain the quoted maximum exposure and
 stop automatic fallback. Provider refusal can still cost its full reserved fee.
 
-`simulate` returns an inert `Simulation`, never `Proof`, and makes no network or
-state calls. For a complete dummy cascade, run cfbk in Simulation mode with
-explicit fixture quotes/outcomes. Turnstile Sandbox accepts only official test
+`simulate` validates actual work/widget requirements and runs the real cfbk cost
+planner/cascade with explicit dummy outcomes. Its `Simulation` carries exposure,
+attempts and stops, never a `Proof`, credential, network call or state mutation.
+Required capabilities prevent simulation from substituting CAPTCHA for PoW. Turnstile Sandbox accepts only official test
 secrets and returns a distinct result that never reserves production usage.
 Production rejects those test secrets. No provider sandbox is assumed free.
 
@@ -96,3 +99,5 @@ mode, malformed/uncertain responses and rich output checks. Integration tests do
 not duplicate upstream KDF tests. Crow compiles/tests; no live provider calls,
 paid work, credentials or hardware verification have been executed. Hardware and
 commercial candidate rows are not implemented adapters.
+
+See [the contract](docs/CONTRACT.md) and [provider notes](docs/PROVIDERS.md).

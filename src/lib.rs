@@ -30,6 +30,17 @@ pub enum Error {
     Cost,
 }
 
+/// Required caller-owned atomic dispatch and budget reservation.
+/// Configure this port with the stable application operation and its total budget.
+/// No database connection is accepted or opened by the library.
+pub trait DispatchState {
+    /// Atomically reserve the exact quote binding and its maximum fee before I/O.
+    /// Return true only for a newly admitted dispatch. Previously dispatched,
+    /// pending or uncertain bindings must return false, including after restarts.
+    /// Reconciliation belongs to the host; dropping an adapter is not a rollback.
+    fn reserve_dispatch(&mut self, quote: &Quote) -> bool;
+}
+
 /// Caller-selected action and usage semantics. Use opaque identifiers.
 pub struct Use<'a> {
     /// Explicit comparison/consumption scope, including any policy epoch.
@@ -84,17 +95,8 @@ pub enum Disclosure {
     Complete,
 }
 
-/// A deterministic local test outcome. It is deliberately not a [`Proof`].
-#[derive(Debug, PartialEq, Eq)]
-pub struct Simulation {
-    /// Configured dummy outcome for planning and UI development.
-    pub accepted: bool,
-}
-
-/// Local simulation does not invoke adapters, consume proofs or access credentials.
-pub fn simulate(accepted: bool) -> Simulation {
-    Simulation { accepted }
-}
+pub mod simulation;
+pub use simulation::{Simulation, simulate};
 
 /// Exact third-party service fee for a local-only computation (not CPU/hosting cost).
 pub fn local_quote(unit: Unit, binding: String, valid_until: u64) -> Quote {

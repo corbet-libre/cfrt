@@ -20,12 +20,27 @@ pub struct Work {
     pub prefix_digits: usize,
 }
 
+impl Work {
+    pub(crate) fn validate(&self, now: u64, expires: u64) -> Result<(), Error> {
+        if !(1..=100_000).contains(&self.iterations)
+            || !(1..=8).contains(&self.prefix_digits)
+            || expires <= now
+            || expires.saturating_sub(now) > 3600
+            || expires > i64::MAX as u64
+        {
+            return Err(Error::Configuration);
+        }
+        Ok(())
+    }
+}
+
 /// Retain this authoritative envelope in RAM until verification. Only its wire
 /// challenge goes to the client; client-returned challenge parameters are not trusted.
 pub struct Issued {
     challenge: Challenge,
     scope: String,
     action: String,
+    maximum: u64,
     expires: u64,
 }
 
@@ -65,20 +80,14 @@ impl Altcha {
         expires: u64,
     ) -> Result<Issued, Error> {
         usage.validate()?;
-        if !(1..=100_000).contains(&work.iterations)
-            || !(1..=8).contains(&work.prefix_digits)
-            || expires <= now
-            || expires.saturating_sub(now) > 3600
-            || expires > i64::MAX as u64
-        {
-            return Err(Error::Configuration);
-        }
+        work.validate(now, expires)?;
         let data = BTreeMap::from([(
             "context".into(),
             serde_json::Value::String(digest(&[
                 "cfrt.altcha.context.v1",
                 usage.scope,
                 usage.action,
+                &usage.maximum.to_string(),
             ])),
         )]);
         let challenge = altcha::create_challenge(CreateChallengeOptions {
@@ -91,11 +100,12 @@ impl Altcha {
             hmac_signature_secret: Some(self.secret.to_string()),
             ..Default::default()
         })
-        .map_err(|_| Error::Rejected)?;
+        .expect("fixed algorithm and validated work produce valid ALTCHA parameters");
         Ok(Issued {
             challenge,
             scope: usage.scope.into(),
             action: usage.action.into(),
+            maximum: usage.maximum,
             expires,
         })
     }
@@ -114,6 +124,7 @@ impl Altcha {
         usage.validate()?;
         if usage.scope != issued.scope
             || usage.action != issued.action
+            || usage.maximum != issued.maximum
             || now >= issued.expires
             || solution.derived_key.len() != 64
         {
@@ -124,7 +135,7 @@ impl Altcha {
             solution,
             self.secret.as_str(),
         ))
-        .map_err(|_| Error::Rejected)?;
+        .expect("privately issued immutable ALTCHA parameters remain valid");
         if !result.verified {
             return Err(Error::Rejected);
         }

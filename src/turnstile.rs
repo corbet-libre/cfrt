@@ -1,14 +1,13 @@
 //! Cloudflare Turnstile Siteverify integration using maintained HTTP/form/JSON libraries.
 //! The host supplies TLS transport, disables redirects/retries and bounds response bodies.
-use crate::{Consumption, Disclosure, Error, Proof, Use, digest};
+use crate::{Consumption, Disclosure, DispatchState, Error, Proof, Use, digest};
 use cfbk::cost::{DispatchPermit, Mode, Price, Quote};
 use zeroize::Zeroizing;
 
 /// Trusted transport. Network failures are ambiguous, never automatically retried.
 pub trait Transport {
     /// POST the exact request once, over authenticated TLS, to its fixed origin.
-    /// Atomically reserve `quote.binding` and its maximum fee in caller-owned state
-    /// before dispatch; repeated bindings must not cause a second paid request.
+    /// The library has already required atomic host dispatch/budget reservation.
     /// No redirects, hidden SDK retries, logging bodies or disk caches. Bound the
     /// response while reading it (64 KiB maximum), including decompression.
     fn send(
@@ -55,7 +54,7 @@ impl Request<'_> {
             &self.expires.to_string(),
         ])
     }
-    fn validate(&self, now: u64) -> Result<(), Error> {
+    pub(crate) fn validate(&self, now: u64) -> Result<(), Error> {
         self.usage.validate()?;
         if self.widget_action.is_empty()
             || self.widget_action.len() > 32
@@ -168,7 +167,7 @@ impl<T: Transport> Turnstile<T> {
         request: &Request<'_>,
         token: &str,
         permit: DispatchPermit<String>,
-        store: &mut impl Consumption,
+        store: &mut (impl Consumption + DispatchState),
         disclosure: Disclosure,
         now: u64,
     ) -> Result<Verified, Error> {
@@ -180,6 +179,9 @@ impl<T: Transport> Turnstile<T> {
             .validate(&self.binding(request, token), self.mode, now)
             .map_err(|_| Error::Cost)?;
         if permit.candidate() != &self.instance {
+            return Err(Error::Cost);
+        }
+        if !store.reserve_dispatch(permit.quote()) {
             return Err(Error::Cost);
         }
         let body =
