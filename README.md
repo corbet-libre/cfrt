@@ -96,7 +96,7 @@ Source contracts checked 2026-10-10:
 Real ALTCHA challenge/solve/verify with low-cost dummy work; actual HTTP request
 construction and provider JSON against inert transport; context, expiry, cost,
 mode, malformed/uncertain responses and rich output checks. Integration tests do
-not duplicate upstream KDF tests. Crow compiles/tests; no live provider calls,
+not duplicate upstream KDF tests. CI compiles/tests; no live provider calls,
 paid work, credentials or hardware verification have been executed. Hardware and
 commercial candidate rows are not implemented adapters.
 
