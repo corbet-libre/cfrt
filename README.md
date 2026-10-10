@@ -100,6 +100,9 @@ not duplicate upstream KDF tests. Crow compiles/tests; no live provider calls,
 paid work, credentials or hardware verification have been executed. Hardware and
 commercial candidate rows are not implemented adapters.
 
+Async verification takes a trusted live clock (`|| trusted_now()`), rechecked
+after each awaited boundary. Expired results and clock rollback refuse a new proof.
+
 See [the contract](docs/CONTRACT.md) and [provider notes](docs/PROVIDERS.md).
 
 `extension::Service` makes the adapter model open to further mechanisms. The

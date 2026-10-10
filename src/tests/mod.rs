@@ -4,6 +4,8 @@ use cfbk::{Candidate, Config};
 use futures::executor::block_on;
 use std::cell::Cell;
 
+mod timing;
+
 fn usage() -> Use<'static> {
     Use {
         scope: "tenant:epoch",
@@ -351,7 +353,7 @@ fn provider_verification_modes_rich_output_and_cost_binding() {
                 permit(quote(&adapter), mode, "turnstile/account/widget"),
                 &mut state,
                 disclosure,
-                100,
+                || 100,
             ))
             .unwrap();
             let upstream = match output {
@@ -400,7 +402,7 @@ fn provider_verification_modes_rich_output_and_cost_binding() {
                 permit(q, mode, id),
                 &mut store(),
                 Disclosure::Minimal,
-                100
+                || 100
             )),
             Err(Error::Cost)
         ));
@@ -419,7 +421,7 @@ fn provider_verification_modes_rich_output_and_cost_binding() {
                 calls: 0
             },
             Disclosure::Minimal,
-            100
+            || 100
         )),
         Err(Error::Consumption)
     ));
@@ -442,7 +444,7 @@ fn provider_refusal_ambiguity_and_invalid_requests() {
                 ),
                 &mut store(),
                 Disclosure::Minimal,
-                100
+                || 100
             )),
             Err(Error::Rejected)
         ));
@@ -474,7 +476,7 @@ fn provider_refusal_ambiguity_and_invalid_requests() {
                 ),
                 &mut store(),
                 Disclosure::Minimal,
-                100
+                || 100
             )),
             Err(Error::Uncertain)
         ));
@@ -504,7 +506,7 @@ fn provider_refusal_ambiguity_and_invalid_requests() {
                 ),
                 &mut store(),
                 Disclosure::Minimal,
-                100
+                || 100
             ))
             .is_err()
         );
@@ -639,7 +641,7 @@ fn complete_failure_reports_preserve_http_bytes_without_diagnostic_leaks() {
             ),
             &mut Store { allowed, calls: 0 },
             Disclosure::Complete,
-            100,
+            || 100,
         ))
         .err()
         .unwrap();

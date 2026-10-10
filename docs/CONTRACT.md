@@ -40,3 +40,14 @@ quote/permit, requires atomic dispatch, checks authenticated result context and
 validity, then reserves usage. Explicit rich and sandbox output preserve the same
 boundary as built-ins. A fixture implementation tests this port; it does not
 qualify a useful-computation vendor or invent its verification protocol.
+
+Async verification receives a trusted live clock, for example
+`verify(..., || trusted_now())`. The library samples it at admission, after
+operation reservation, after the provider returns and after atomic consumption.
+Clock rollback refuses the operation. Expiry is exclusive: no fresh proof is
+returned at or beyond its deadline. Tariff expiry controls dispatch; it does not
+invalidate a timely proof from a request already sent under a valid tariff.
+Transports must also check a fresh clock immediately before I/O after their own
+queue waits. Atomic state ports must check proof validity within their transaction.
+Late refusals preserve requested private responses and never automatically undo
+committed usage or release potentially billed exposure.

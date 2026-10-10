@@ -168,6 +168,8 @@ impl<T: Transport> Turnstile<T> {
 
     /// Consume a cost permit, verify provider output and reserve authenticated usage.
     /// Do not call automatically after an uncertain/pending attempt in a cascade.
+    /// Supply a fresh Unix-seconds clock, rechecked after reservation, provider
+    /// completion and consumption. Expiry never automatically releases fee exposure.
     pub async fn verify(
         &self,
         request: &Request<'_>,
@@ -175,8 +177,9 @@ impl<T: Transport> Turnstile<T> {
         permit: DispatchPermit<String>,
         store: &mut (impl Consumption + DispatchState),
         disclosure: Disclosure,
-        now: u64,
+        clock: impl Fn() -> u64,
     ) -> Result<Verified, Error> {
+        let now = clock();
         request.validate(now)?;
         if token.is_empty() || token.len() > 2048 {
             return Err(Error::Configuration);
@@ -190,6 +193,13 @@ impl<T: Transport> Turnstile<T> {
         if !store.reserve_dispatch(permit.quote()) {
             return Err(Error::Cost);
         }
+        let dispatch_at = clock();
+        if dispatch_at < now || dispatch_at >= request.expires {
+            return Err(Error::Cost);
+        }
+        permit
+            .validate(&self.binding(request, token), self.mode, dispatch_at)
+            .map_err(|_| Error::Cost)?;
         let body =
             serde_urlencoded::to_string([("secret", self.secret.as_str()), ("response", token)])
                 .expect("string pairs encode")
@@ -214,6 +224,10 @@ impl<T: Transport> Turnstile<T> {
             "headers": response.headers().iter().map(|(k,v)| (k.as_str(),v.as_bytes())).collect::<Vec<_>>(),
             "body": response.body(),
         });
+        let completed_at = clock();
+        if completed_at < dispatch_at || completed_at >= request.expires {
+            return Err(Error::Rejected.with_report(disclosure, information));
+        }
         if !response.status().is_success() {
             return Err(Error::Uncertain.with_report(disclosure, information));
         }
@@ -237,6 +251,10 @@ impl<T: Transport> Turnstile<T> {
         let key = digest(&["cfrt.turnstile.proof.v1", &self.instance, token]);
         if !store.reserve(&key, &request.usage, request.expires) {
             return Err(Error::Consumption.with_report(disclosure, information));
+        }
+        let accepted_at = clock();
+        if accepted_at < completed_at || accepted_at >= request.expires {
+            return Err(Error::Rejected.with_report(disclosure, information));
         }
         Ok(Verified::Production {
             proof: Proof {

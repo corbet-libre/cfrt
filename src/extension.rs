@@ -131,6 +131,8 @@ impl<A: Adapter> Service<A> {
         })
     }
     /// Require atomic cost admission, authenticate work, and consume only production evidence.
+    /// Supply a fresh Unix-seconds clock, rechecked after reservation, provider
+    /// completion and consumption. Expiry never automatically releases fee exposure.
     pub async fn verify(
         &self,
         request: &Request<'_>,
@@ -138,8 +140,9 @@ impl<A: Adapter> Service<A> {
         permit: DispatchPermit<String>,
         state: &mut (impl Consumption + DispatchState),
         disclosure: Disclosure,
-        now: u64,
+        clock: impl Fn() -> u64,
     ) -> Result<Verified, Error> {
+        let now = clock();
         self.validate(request, evidence, now)?;
         permit
             .validate(&self.binding(request, evidence), self.adapter.mode(), now)
@@ -148,11 +151,28 @@ impl<A: Adapter> Service<A> {
         {
             return Err(Error::Cost);
         }
+        let dispatch_at = clock();
+        if dispatch_at < now || dispatch_at >= request.expires {
+            return Err(Error::Cost);
+        }
+        permit
+            .validate(
+                &self.binding(request, evidence),
+                self.adapter.mode(),
+                dispatch_at,
+            )
+            .map_err(|_| Error::Cost)?;
         let result = self
             .adapter
             .verify(evidence, request, permit.quote())
             .await?;
-        if result.id.is_empty() || result.context != request.binding() || result.expires <= now {
+        let completed_at = clock();
+        if completed_at < dispatch_at
+            || completed_at >= request.expires
+            || result.id.is_empty()
+            || result.context != request.binding()
+            || result.expires <= completed_at
+        {
             return Err(Error::Rejected.with_report(disclosure, result.upstream));
         }
         let expires = result.expires.min(request.expires);
@@ -168,6 +188,10 @@ impl<A: Adapter> Service<A> {
         ]);
         if !state.reserve(&key, &request.usage, expires) {
             return Err(Error::Consumption.with_report(disclosure, result.upstream));
+        }
+        let accepted_at = clock();
+        if accepted_at < completed_at || accepted_at >= expires {
+            return Err(Error::Rejected.with_report(disclosure, result.upstream));
         }
         Ok(Verified::Production {
             proof: Proof {

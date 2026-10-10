@@ -225,7 +225,7 @@ fn turnstile_requires_host_dispatch_reservation_before_provider_or_usage() {
             permit(quote, Mode::Production, "turnstile/account/widget"),
             &mut RefuseDispatch,
             Disclosure::Minimal,
-            100
+            || 100
         )),
         Err(Error::Cost)
     ));
@@ -281,7 +281,7 @@ fn same_turnstile_dispatch_raced_across_instances_is_admitted_once() {
                         ),
                         &mut port,
                         Disclosure::Minimal,
-                        100,
+                        || 100,
                     ))
                     .is_ok()
                 })

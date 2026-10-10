@@ -115,6 +115,7 @@ impl Use<'_> {
 pub trait Consumption {
     /// Atomically reserve one action up to `maximum`, idempotently for that action.
     /// Bind retries to the original maximum and expiry. Never implement as count-then-write.
+    /// Check the exclusive expiry against a fresh clock inside that transaction.
     fn reserve(&mut self, proof: &str, usage: &Use<'_>, expires: u64) -> bool;
 }
 

@@ -114,7 +114,7 @@ fn open_effort_adapter_enforces_modes_requested_information_and_host_state() {
                 permit(&svc, &request()),
                 &mut port,
                 disclosure,
-                100,
+                || 100,
             ))
             .unwrap();
             let rich = match result {
@@ -152,7 +152,7 @@ fn open_effort_adapter_enforces_modes_requested_information_and_host_state() {
             permit(&svc, &request()),
             &mut port,
             Disclosure::Minimal,
-            100,
+            || 100,
         ));
         assert!(matches!(result,Err(actual) if actual == error));
     }
@@ -173,7 +173,7 @@ fn open_effort_adapter_refuses_mismatched_context_invalid_inputs_and_expired_evi
                 permit(&svc, &request()),
                 &mut state(),
                 Disclosure::Minimal,
-                100
+                || 100
             )),
             Err(Error::Rejected)
         ));
@@ -187,7 +187,7 @@ fn open_effort_adapter_refuses_mismatched_context_invalid_inputs_and_expired_evi
             permit(&svc, &request()),
             &mut state(),
             Disclosure::Minimal,
-            100
+            || 100
         )),
         Err(Error::Uncertain)
     ));
@@ -208,7 +208,7 @@ fn open_effort_adapter_refuses_mismatched_context_invalid_inputs_and_expired_evi
                 super::permit(q, Mode::Production, id),
                 &mut state(),
                 Disclosure::Minimal,
-                now
+                || now
             )),
             Err(Error::Cost)
         ));
@@ -301,7 +301,7 @@ fn complete_extension_reports_survive_policy_and_consumption_refusal() {
             permit(&svc, &request()),
             &mut port,
             Disclosure::Complete,
-            100,
+            || 100,
         ))
         .err()
         .unwrap();
