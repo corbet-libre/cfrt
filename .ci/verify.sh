@@ -18,6 +18,7 @@ rustc --version
 cargo fmt --all --check
 cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
+python3 .ci/test-clock-regression.py
 cargo check --locked --target wasm32-unknown-unknown
 rustup run nightly rustc --version
 NIGHTLY_CARGO="$(rustup which --toolchain nightly cargo)"
