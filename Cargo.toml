@@ -3,9 +3,9 @@ name = "cfrt"
 version = "0.0.0"
 edition = "2024"
 rust-version = "1.88"
-description = "Effort gate for cvld: proof of work and similar costly effort, never money"
+description = "Reusable verified-effort integrations with bounded costs and caller-owned consumption"
 license = "LGPL-3.0-only WITH LGPL-3.0-linking-exception"
-repository = "https://github.com/corbet-foss/cfrt"
+repository = "https://git.corbet.ch/corbet-foss/cfrt"
 readme = "README.md"
 publish = false
 include = ["Cargo.toml", "src/**", "README.md", "LICENSE", "LICENSE.md", "LICENSES/LGPL-3.0-only.txt", "LICENSES/LGPL-3.0-linking-exception.txt", "LICENSES/GPL-3.0-only.txt"]
@@ -16,3 +16,19 @@ crate-type = ["rlib"]
 [lints.rust]
 unsafe_code = "forbid"
 missing_docs = "warn"
+
+[dependencies]
+altcha = "1"
+cfbk = { git = "https://git.corbet.ch/corbet-foss/cfbk", branch = "main" }
+http = "1"
+serde_json = "1"
+serde_urlencoded = "0.7"
+sha2 = "0.11"
+thiserror = "2"
+zeroize = { version = "1", features = ["alloc"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
+[dev-dependencies]
+futures = "0.3"
