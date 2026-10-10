@@ -151,12 +151,13 @@ impl<A: Adapter> Service<A> {
             .verify(evidence, request, permit.quote())
             .await?;
         if result.id.is_empty() || result.context != request.binding() || result.expires <= now {
-            return Err(Error::Rejected);
+            return Err(Error::Rejected.with_report(disclosure, result.upstream));
         }
         let expires = result.expires.min(request.expires);
-        let upstream = (disclosure == Disclosure::Complete).then_some(result.upstream);
         if self.adapter.mode() == Mode::Sandbox {
-            return Ok(Verified::Sandbox { upstream });
+            return Ok(Verified::Sandbox {
+                upstream: (disclosure == Disclosure::Complete).then_some(result.upstream),
+            });
         }
         let key = digest(&[
             "cfrt.extension.proof.v1",
@@ -164,14 +165,14 @@ impl<A: Adapter> Service<A> {
             &result.id,
         ]);
         if !state.reserve(&key, &request.usage, expires) {
-            return Err(Error::Consumption);
+            return Err(Error::Consumption.with_report(disclosure, result.upstream));
         }
         Ok(Verified::Production {
             proof: Proof {
                 mechanism: self.adapter.mechanism(),
                 expires,
             },
-            upstream,
+            upstream: (disclosure == Disclosure::Complete).then_some(result.upstream),
         })
     }
 }

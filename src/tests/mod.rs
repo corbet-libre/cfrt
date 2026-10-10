@@ -261,6 +261,7 @@ impl turnstile::Transport for Dummy {
         }
         Ok(http::Response::builder()
             .status(self.status)
+            .header("x-provider-extension", "inert-private-header")
             .body(self.body.clone())
             .unwrap())
     }
@@ -354,14 +355,23 @@ fn provider_verification_modes_rich_output_and_cost_binding() {
             ))
             .unwrap();
             let upstream = match output {
-                turnstile::Verified::Production { proof, upstream } => {
+                turnstile::Verified::Production {
+                    proof,
+                    upstream,
+                    transport,
+                } => {
+                    assert_eq!(transport.is_some(), disclosure == Disclosure::Complete);
                     assert_eq!(mode, Mode::Production);
                     assert_eq!(proof.mechanism(), "turnstile");
                     assert_eq!(proof.expires(), 300);
                     assert_eq!(state.calls, 1);
                     upstream
                 }
-                turnstile::Verified::Sandbox { upstream } => {
+                turnstile::Verified::Sandbox {
+                    upstream,
+                    transport,
+                } => {
+                    assert_eq!(transport.is_some(), disclosure == Disclosure::Complete);
                     assert_eq!(mode, Mode::Sandbox);
                     assert_eq!(state.calls, 0);
                     upstream
@@ -580,3 +590,71 @@ impl DispatchState for Store {
 }
 
 mod extension;
+
+#[test]
+fn complete_failure_reports_preserve_http_bytes_without_diagnostic_leaks() {
+    for (status, body, allowed, category) in [
+        (
+            500,
+            b"private invalid upstream".to_vec(),
+            true,
+            Error::Uncertain,
+        ),
+        (
+            200,
+            b"private invalid upstream".to_vec(),
+            true,
+            Error::Uncertain,
+        ),
+        (
+            200,
+            br#"{"success":false,"future":"private upstream"}"#.to_vec(),
+            true,
+            Error::Rejected,
+        ),
+        (
+            200,
+            serde_json::to_vec(&good()).unwrap(),
+            false,
+            Error::Consumption,
+        ),
+    ] {
+        let adapter = turnstile::Turnstile::new(
+            config(Mode::Production),
+            Dummy {
+                calls: Cell::new(0),
+                status,
+                body: body.clone(),
+                fail: false,
+            },
+        )
+        .unwrap();
+        let error = block_on(adapter.verify(
+            &request(),
+            "inert+token&safe",
+            permit(
+                quote(&adapter),
+                Mode::Production,
+                "turnstile/account/widget",
+            ),
+            &mut Store { allowed, calls: 0 },
+            Disclosure::Complete,
+            100,
+        ))
+        .err()
+        .unwrap();
+        assert_eq!(error.category(), &category);
+        assert_eq!(error.to_string(), category.to_string());
+        let report = error.report().unwrap();
+        assert_eq!(report.information()["status"], status);
+        assert_eq!(report.information()["body"], serde_json::json!(body));
+        assert_eq!(
+            report.information()["headers"][0][0],
+            "x-provider-extension"
+        );
+        assert!(!format!("{error:?}").contains("private upstream"));
+        assert_eq!(format!("{report:?}"), "ProviderReport([redacted])");
+    }
+    assert!(Error::Uncertain.report().is_none());
+    assert_eq!(Error::Cost.category(), &Error::Cost);
+}

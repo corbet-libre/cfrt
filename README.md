@@ -108,3 +108,10 @@ context, result ID and expiry. The service requires bound cost permission plus
 host dispatch reservation, then consumption, and applies minimal/complete and
 sandbox separation uniformly. The public `Authenticated` value is a trusted-code
 port, not member input or an accepting JSON endpoint.
+
+Complete response access also applies to bounded provider replies that fail a
+predicate or atomic consumption. Inspect `Error::report()` explicitly;
+`Error::category()` preserves the domain failure used for orchestration. Reports
+remain RAM-only, redact Debug/Display, and cannot create a verified proof. Trusted
+extension adapters can use `Error::with_report` for their own available errors.
+Turnstile also returns exact bounded HTTP status, headers and body bytes in its complete transport report, including non-2xx and malformed replies. Oversized replies are refused without retaining an unbounded payload.

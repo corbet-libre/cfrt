@@ -1,6 +1,6 @@
 //! Cloudflare Turnstile Siteverify integration using maintained HTTP/form/JSON libraries.
 //! The host supplies TLS transport, disables redirects/retries and bounds response bodies.
-use crate::{Consumption, Disclosure, DispatchState, Error, Proof, Use, digest};
+use crate::{Consumption, Disclosure, DispatchState, Error, Proof, ProviderReport, Use, digest};
 use cfbk::cost::{DispatchPermit, Mode, Price, Quote};
 use zeroize::Zeroizing;
 
@@ -90,11 +90,15 @@ pub enum Verified {
         proof: Proof,
         /// Complete available provider response, including unknown extensions.
         upstream: Option<serde_json::Value>,
+        /// Exact bounded HTTP reply (status, headers and body bytes) when requested.
+        transport: Option<ProviderReport>,
     },
     /// Provider test-key response, never a production proof.
     Sandbox {
         /// Complete response only when explicitly requested.
         upstream: Option<serde_json::Value>,
+        /// Exact bounded HTTP reply (status, headers and body bytes) when requested.
+        transport: Option<ProviderReport>,
     },
 }
 
@@ -200,25 +204,37 @@ impl<T: Transport> Turnstile<T> {
             .send(wire, permit.quote())
             .await
             .map_err(|_| Error::Uncertain)?;
-        if !response.status().is_success() || response.body().len() > 65536 {
+        if response.body().len() > 65536 {
             return Err(Error::Uncertain);
         }
-        let value: serde_json::Value =
-            serde_json::from_slice(response.body()).map_err(|_| Error::Uncertain)?;
+        let information = serde_json::json!({
+            "status": response.status().as_u16(),
+            "headers": response.headers().iter().map(|(k,v)| (k.as_str(),v.as_bytes())).collect::<Vec<_>>(),
+            "body": response.body(),
+        });
+        if !response.status().is_success() {
+            return Err(Error::Uncertain.with_report(disclosure, information));
+        }
+        let value: serde_json::Value = serde_json::from_slice(response.body())
+            .map_err(|_| Error::Uncertain.with_report(disclosure, information.clone()))?;
         if value["success"].as_bool() != Some(true)
             || value["hostname"].as_str() != Some(&self.hostname)
             || value["action"].as_str() != Some(request.widget_action)
             || value["cdata"].as_str() != Some(&request.challenge_data())
         {
-            return Err(Error::Rejected);
+            return Err(Error::Rejected.with_report(disclosure, information));
         }
         let upstream = (disclosure == Disclosure::Complete).then_some(value);
         if self.mode == Mode::Sandbox {
-            return Ok(Verified::Sandbox { upstream });
+            return Ok(Verified::Sandbox {
+                upstream,
+                transport: (disclosure == Disclosure::Complete)
+                    .then_some(ProviderReport(information)),
+            });
         }
         let key = digest(&["cfrt.turnstile.proof.v1", &self.instance, token]);
         if !store.reserve(&key, &request.usage, request.expires) {
-            return Err(Error::Consumption);
+            return Err(Error::Consumption.with_report(disclosure, information));
         }
         Ok(Verified::Production {
             proof: Proof {
@@ -226,6 +242,7 @@ impl<T: Transport> Turnstile<T> {
                 expires: request.expires,
             },
             upstream,
+            transport: (disclosure == Disclosure::Complete).then_some(ProviderReport(information)),
         })
     }
 }

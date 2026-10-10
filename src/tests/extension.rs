@@ -285,3 +285,37 @@ fn open_effort_adapter_refuses_mismatched_context_invalid_inputs_and_expired_evi
         .unwrap();
     assert_eq!(q.valid_until, 250);
 }
+
+#[test]
+fn complete_extension_reports_survive_policy_and_consumption_refusal() {
+    for rejected in [true, false] {
+        let mut svc = service();
+        if rejected {
+            svc.adapter.mutate = |v| v.context.clear();
+        }
+        let mut port = state();
+        port.consume = false;
+        let error = block_on(svc.verify(
+            &request(),
+            b"inert-result",
+            permit(&svc, &request()),
+            &mut port,
+            Disclosure::Complete,
+            100,
+        ))
+        .err()
+        .unwrap();
+        assert_eq!(
+            error.category(),
+            if rejected {
+                &Error::Rejected
+            } else {
+                &Error::Consumption
+            }
+        );
+        assert_eq!(
+            error.report().unwrap().information()["unknown-extension"],
+            42
+        );
+    }
+}
