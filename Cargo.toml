@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.88"
 description = "Reusable verified-effort integrations with bounded costs and caller-owned consumption"
 license = "LGPL-3.0-only WITH LGPL-3.0-linking-exception"
-repository = "https://git.corbet.ch/corbet-foss/cfrt"
+repository = "https://git.corbet.ch/corbet-libre/cfrt"
 readme = "README.md"
 publish = false
 include = ["Cargo.toml", "src/**", "README.md", "LICENSE", "LICENSE.md", "LICENSES/LGPL-3.0-only.txt", "LICENSES/LGPL-3.0-linking-exception.txt", "LICENSES/GPL-3.0-only.txt"]
@@ -20,7 +20,7 @@ missing_docs = "warn"
 [dependencies]
 hex = "0.4"
 altcha = "1"
-cfbk = { git = "https://git.corbet.ch/corbet-foss/cfbk", branch = "main" }
+cfbk = { git = "https://git.corbet.ch/corbet-libre/cfbk", branch = "main" }
 http = "1"
 serde_json = "1"
 serde_urlencoded = "0.7"
